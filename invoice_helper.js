@@ -1,6 +1,6 @@
 // INVOICE HANDLER SCRIPT BY AMEENAH RIFFIN
 var script = document.createElement('script');
-var version = '1.9.1'
+var version = '1.9.5'
 script.type = 'module';
 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
 script.onload = function() {
@@ -113,6 +113,7 @@ script.onload = function() {
         <option value="southern_heat_pump">AA4 (WIP)</option>
         <option value="southern_heat_pump">Clearway (WIP)</option>
         <option value="southern_heat_pump">Chigwell</option>
+        <option value="pozitive_energy">Pozitive Energy</option>        
         <option value="homelet">Homelet (WIP)</option>
         <option value="southern_heat_pump">KONE (WIP)</option>
         <option value="ctax_newhamcouncil">Council Tax - Newham</option>
@@ -317,6 +318,7 @@ function parseInvoice(text, company) {
         ctax_towerhamlets: parseCtaxTowerHamlets,
         ctax_newhamcouncil: parseCTAXNewhamCouncil,
         tlt: parseTltInvoices,
+        pozitive_energy: parsePozitiveEnergyInvoices,
     };
 
     // Execute the appropriate parsing method based on the selected company
@@ -633,7 +635,7 @@ function parseSwitchtwoInvoice(inputData) {
 }
 
 function parseTltInvoices(inputData) {
-    const invoiceNumberRegex = /Invoice Number [^\S\n]*([\s\S]+?)(?: VAT|$)/;
+    const invoiceNumberRegex = /London[^\S\n]*([\s\S]+?)(?: VAT|$)/;
     const ownedAmountRegex = /Sub-totals [^\S\n]*([\s\S]+?)(?:VAT| T|$)/;
     const PODescRegex = /Your Ref ([\s\S]*?)Sub Totals/;
     const supplyAddressRegex = /Matter: ([\s\S]*?)Sub Totals/;
@@ -667,6 +669,43 @@ function parseTltInvoices(inputData) {
         po_desc: PODesc,
     };  
 }
+
+function parsePozitiveEnergyInvoices(inputData) {
+    const invoiceNumberRegex = /\b\d{18}\b/;
+    const ownedAmountRegex = /Amount to Pay: [^\S\n]*([\s\S]+?)(?:Rota Load Block|$)/;
+    const PODescRegex = /Your Ref ([\s\S]*?)Sub Totals/;
+    const supplyAddressRegex = /Site Address : ([\s\S]*?)Account/;
+    const billDateRegex = /Payment Due By Date: [^\S\n]*([\s\S]+?)(?:Our Ref|$)/;
+
+    const invoiceNumberMatch = inputData.match(invoiceNumberRegex);
+    const ownedAmountMatch = inputData.match(ownedAmountRegex);
+    const PODescMatch = inputData.match(PODescRegex);
+    const supplyAddressMatch = inputData.match(supplyAddressRegex);
+    const billDateMatch = inputData.match(billDateRegex);
+
+    const invoiceNumber = invoiceNumberMatch ? invoiceNumberMatch[1] : "";
+    const ownedAmount = ownedAmountMatch ? ownedAmountMatch[1] : "";
+    let PODesc = PODescMatch ? PODescMatch[1] : "";
+    const supplyAddress = supplyAddressMatch ? supplyAddressMatch[1].trim() : "";
+    const billDate = billDateMatch ? billDateMatch[1].trim() : "";
+
+    PODesc = PODesc.replace(/[\d£.]/g, '').trim();
+
+    return {
+        accountNumber: invoiceNumber,
+        invoicenum: invoiceNumber,
+        ownedAmount: ownedAmount,
+        billingPeriod: "",
+        supplyAddress: supplyAddress,
+        billDate: billDate,
+        vendor: "v0000849",
+        gl_code: "5100-4030",
+        unit: "",
+        taxrate: 1,
+        po_desc: PODesc,
+    };  
+}
+
 
 function getpropertycodebyaddress(supplyAddress) {
     let supplyAddressWords = null;
